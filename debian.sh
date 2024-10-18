@@ -48,6 +48,11 @@ if "$DESKTOP_SESSION" == "gnome"; then
     gsettings set org.gnome.shell.extensions.user-theme name Lavanda-Sea-Dark
     gsettings set org.gnome.desktop.interface icon-theme breeze
     gsettings set org.gnome.desktop.default-applications.terminal exec ‘kitty’
+    # better alt tab functionality
+    gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>Tab']"
+    gsettings set org.gnome.desktop.wm.keybindings switch-windows-backward "['<Shift><Alt>Tab', '<Alt>Above_Tab']"
+    gsettings set org.gnome.desktop.wm.keybindings switch-applications "[]"
+    gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward "[]"
     if $is_macbook; then 
         echo "Swapping left Super & left Control"
         gsettings set org.gnome.desktop.input-sources xkb-options "['ctrl:swap_lwin_lctl']"
