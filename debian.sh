@@ -27,14 +27,20 @@ check_dir_exists() {
 is_macbook=false
 install_themes=false
 install_nerdfonts=false
-confirm "\033[94mSwap Left Super & Left Control? (Mac keyboard)\033[0m" && is_macbook=true
-confirm "\033[94mInstall GTK themes?\033[0m" && install_themes=true
-confirm "\0cc[94mInstall Nerd Fonts?\033[0m" && install_nerdfonts=true
+install_dotfiles=false
+# colored text stopped working? idk
+# confirm "\033[94mSwap Left Super & Left Control? (Mac keyboard)\033[0m" && is_macbook=true
+# confirm "\033[94mInstall GTK themes?\033[0m" && install_themes=true
+# confirm "\0cc[94mInstall Nerd Fonts?\033[0m" && install_nerdfonts=true
+confirm "Swap Left Super & Left Control <for mac keyboard> (Y/N)" && is_macbook=true
+confirm "Install GTK themes? (Y/N)" && install_themes=true
+confirm "Install Nerd Fonts? (Y/N)" && install_nerdfonts=true
+confirm "Install billypom dotfiles? (Y/N)" && install_dotfiles=true
 
 sudo apt update
 sudo apt upgrade
 sudo apt purge nano evolution nautilus
-sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget npm zip unzip kitty libfuse-dev python3-pip nemo
+sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget nvm zip unzip kitty libfuse-dev python3-pip nemo
 # wayland specific packages
 if "$XDG_SESSION_TYPE" == "wayland"; then
     echo "Installing wayland specific packages"
@@ -49,6 +55,7 @@ if "$DESKTOP_SESSION" == "gnome"; then
     gsettings set org.gnome.desktop.interface icon-theme breeze
     gsettings set org.gnome.desktop.default-applications.terminal exec ‘kitty’
     # better alt tab functionality
+    echo "Making alt-tab better :)"
     gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>Tab']"
     gsettings set org.gnome.desktop.wm.keybindings switch-windows-backward "['<Shift><Alt>Tab', '<Alt>Above_Tab']"
     gsettings set org.gnome.desktop.wm.keybindings switch-applications "[]"
@@ -69,6 +76,7 @@ if "$DESKTOP_SESSION" == "gnome"; then
 fi
 # nerdfonts
 if $install_nerdfonts; then
+    echo "Installing nerdfonts"
     bash nerdfonts.sh
 fi
 # themes
@@ -96,15 +104,17 @@ if ! grep -q "alias vim" ~/.bash_aliases; then echo ‘alias vim=“~/applicatio
 echo "Installed latest neovim"
 
 # install my dotfiles
-if check_dir_exists ~/code/dotfiles; then
-    cd ~/code/dotfiles
-    git pull
-    echo "Pulled billypom/dotfiles from github"
-else
-    mkdir -p ~/code
-    cd ~/code
-    git clone https://github.com/billypom/dotfiles.git
-    echo "Cloned billypom/dotfiles from github"
+if $install_dotfiles; then
+    if check_dir_exists ~/code/dotfiles; then
+        cd ~/code/dotfiles
+        git pull
+        echo "Pulled billypom/dotfiles from github"
+    else
+        mkdir -p ~/code
+        cd ~/code
+        git clone https://github.com/billypom/dotfiles.git
+        echo "Cloned billypom/dotfiles from github"
+    fi
 fi
 cd ~/code
 stow --adopt dotfiles/
