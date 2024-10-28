@@ -1,9 +1,18 @@
 #!/bin/bash
+fg_black="$(tput setaf 0)"
+fg_red="$(tput setaf 1)"
+fg_green="$(tput setaf 2)"
+fg_yellow="$(tput setaf 3)"
+fg_blue="$(tput setaf 4)"
+fg_magenta="$(tput setaf 5)"
+fg_cyan="$(tput setaf 6)"
+fg_white="$(tput setaf 7)"
+reset="$(tput sgr0)"
 scriptdir=$PWD
 
 confirm() {
     # call with a prompt string or use a default
-    read -r -p "${1:-Are you sure? [y/N]} " response
+    read -r -p "${fg_yellow}${1:-Are you sure? [y/N]}${reset} " response
     case "$response" in
         [yY][eE][sS]|[yY]) 
             true
@@ -27,27 +36,47 @@ check_dir_exists() {
 is_macbook=false
 install_themes=false
 install_nerdfonts=false
+install_neovim=false
 install_dotfiles=false
+install_gnome_configs=false
+include_debian_backports=false
 # colored text stopped working? idk
 # confirm "\033[94mSwap Left Super & Left Control? (Mac keyboard)\033[0m" && is_macbook=true
 # confirm "\033[94mInstall GTK themes?\033[0m" && install_themes=true
 # confirm "\0cc[94mInstall Nerd Fonts?\033[0m" && install_nerdfonts=true
+
+echo "${fg_blue}"
+cat billypom-ascii.txt
+echo "${fg_cyan}-----Debian Install Script-----${reset}"
+confirm "Include debian backports in apt package manager? (Y/N)" && include_debian_backports=true
 confirm "Swap Left Super & Left Control <for mac keyboard> (Y/N)" && is_macbook=true
+if echo $DESKTOP_SESSION | grep -q "gnome"; then
+    confirm "Install gnome extensions, tweaks, and configs? (Y/N)" && install_gnome_configs=true
+fi
 confirm "Install GTK themes? (Y/N)" && install_themes=true
 confirm "Install Nerd Fonts? (Y/N)" && install_nerdfonts=true
-confirm "Install billypom dotfiles? (Y/N)" && install_dotfiles=true
+confirm "Install billypom dotfiles? - includes .bash_aliases file, tmux, kitty, and nvim configs (Y/N)" && install_dotfiles=true
+confirm "Install Neovim? (Y/N)" && install_neovim=true
 
+echo "Updating package manager"
 sudo apt update
-sudo apt upgrade
+echo "Purging yucky packages"
 sudo apt purge nano evolution nautilus
-sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget nvm zip unzip kitty libfuse-dev python3-pip nemo
+echo "Installing yummy packages"
+sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty libfuse-dev python3-pip nemo
+
 # wayland specific packages
-if "$XDG_SESSION_TYPE" == "wayland"; then
+if echo $XDG_SESSION_TYPE | grep -q "wayland"; then
+# if grep -q "wayland" $(echo $XDG_SESSION_TYPE); then
+# if "$XDG_SESSION_TYPE" == "wayland"; then
     echo "Installing wayland specific packages"
     sudo apt install -y wl-clipboard
 fi
+
 # gnome specific packages
-if "$DESKTOP_SESSION" == "gnome"; then
+if echo $DESKTOP_SESSION | grep -q "gnome" && $install_gnome_configs; then
+# if grep -q "gnome" $DESKTOP_SESSION; then
+# if "$DESKTOP_SESSION" == "gnome"; then
     echo "Installing gnome-specific packages"
     sudo apt install -y gnome-tweaks
     gsettings set org.gnome.desktop.interface gtk-theme Lavanda-Sea-Dark
@@ -91,17 +120,19 @@ fi
 xdg-mime default nemo.desktop inode/directory
 
 # install neovim
-mkdir -p ~/applications
-wget -q --show-progress https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
-if check_dir_exists ~/applications/nvim-linux64/; then
-    mv ~/applications/nvim-linux64/ ~/applications/nvim-linux64.old/
+if $install_neovim; then
+    mkdir -p ~/applications
+    wget -q --show-progress https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+    if check_dir_exists ~/applications/nvim-linux64/; then
+        mv ~/applications/nvim-linux64/ ~/applications/nvim-linux64.old/
+    fi
+    tar xzf nvim-linux64.tar.gz
+    mv nvim-linux64 ~/applications/
+    rm nvim-linux64.tar.gz
+    rm -r ~/applications/nvim-linux64.old
+    if ! grep -q "alias vim" ~/.bash_aliases; then echo ‘alias vim=“~/applications/nvim-linux64/bin/nvim”’ >> ~/.bash_aliases; fi
+    echo "Installed latest neovim"
 fi
-tar xzf nvim-linux64.tar.gz
-mv nvim-linux64 ~/applications/
-rm nvim-linux64.tar.gz
-rm -r ~/applications/nvim-linux64.old
-if ! grep -q "alias vim" ~/.bash_aliases; then echo ‘alias vim=“~/applications/nvim-linux64/bin/nvim”’ >> ~/.bash_aliases; fi
-echo "Installed latest neovim"
 
 # install my dotfiles
 if $install_dotfiles; then
@@ -115,13 +146,18 @@ if $install_dotfiles; then
         git clone https://github.com/billypom/dotfiles.git
         echo "Cloned billypom/dotfiles from github"
     fi
+    cd ~/code
+    stow --adopt dotfiles/
+    echo "Stowed dotfiles"
 fi
-cd ~/code
-stow --adopt dotfiles/
-echo "Stowed dotfiles"
-# repository setup
+
+# apt repositories setup
 if ! grep -q "deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware" /etc/apt/sources.list; then echo "deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware" >> /etc/apt/sources.list; fi
 
 if ! grep -q "deb-src http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware" /etc/apt/sources.list; then echo "deb-src http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware" >> /etc/apt/sources.list; fi
+if $include_debian_backports; then
+    if ! grep -q "deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware" /etc/apt/sources.list; then echo "deb http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list; fi
 
-echo -e "\e[0;32m--- debian install script finished running ---\e[0m"
+    if ! grep -q "deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware" /etc/apt/sources.list; then echo "deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free non-free-firmware" >> /etc/apt/sources.list; fi
+fi
+echo "\e[0;32m--- debian install script finished running ---\e[0m"
