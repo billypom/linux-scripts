@@ -63,7 +63,7 @@ sudo apt update
 echo "Purging yucky packages"
 sudo apt purge nano evolution nautilus
 echo "Installing yummy packages"
-sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty libfuse-dev python3-pip nemo
+sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty libfuse-dev python3-pip nemo ncdu tldr htop
 
 # wayland specific packages
 if echo $XDG_SESSION_TYPE | grep -q "wayland"; then
