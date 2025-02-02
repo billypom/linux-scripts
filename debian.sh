@@ -69,7 +69,11 @@ sudo apt update
 echo "Purging yucky packages"
 sudo apt purge nano evolution nautilus
 echo "Installing yummy packages"
-sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty libfuse-dev python3-pip nemo ncdu tldr htop
+if $is_server; then
+    sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty python3-pip ncdu tldr htop
+else
+    sudo apt install vim git cifs-utils nfs-common ripgrep stow virtualenv wget zip unzip kitty libfuse-dev python3-pip nemo ncdu tldr htop
+fi
 
 if $is_server; then
     echo ":3"
