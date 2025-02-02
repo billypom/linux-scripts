@@ -49,7 +49,7 @@ include_debian_backports=false
 echo "${fg_blue}"
 cat ascii.txt
 echo "${fg_cyan}-----Debian Install Script-----${reset}"
-confirm "Is this a server?" && is_server=true
+confirm "Is this a server? (Y/N)" && is_server=true
 confirm "Include debian backports in apt package manager? (Y/N)" && include_debian_backports=true
 confirm "Swap Left Super & Left Control <for mac keyboard> (Y/N)" && is_macbook=true
 if $is_server; then
